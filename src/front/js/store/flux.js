@@ -17,7 +17,7 @@ const getState = ({ getStore, getActions, setStore }) => {
 			auth: false 
 		},
 		actions: {
-			// Función de login
+			
 			login: (email, password) => {
 				const requestOptions = {
 					method: "POST",
@@ -51,7 +51,40 @@ const getState = ({ getStore, getActions, setStore }) => {
 						setStore({ auth: false }); 
 					});
 			},
-
+			signUp: (email, password) => {
+				const requestOptions = {
+					method: "POST",
+					headers: { 'Content-Type': 'application/json' },
+					redirect: "follow",
+					body: JSON.stringify({
+						email: email,
+						password: password
+					})
+				};
+				
+				fetch(process.env.BACKEND_URL + "/api/signup", requestOptions)
+					.then((response) => {
+						if (!response.ok) {
+							console.log("Error en el registro:", response.status); 
+							throw new Error("Signup failed");
+						}
+						return response.json();
+					})
+					.then((data) => {
+						if (data.access_token) {
+							localStorage.setItem("token", data.access_token);
+							setStore({ auth: true });
+							console.log("Registro exitoso:", data);
+						} else {
+							console.error("No se recibió un token:", data);
+						}
+					})
+					.catch((error) => {
+						console.error("Error en el registro:", error); 
+						setStore({ auth: false }); 
+					});
+			},
+			
 			
 			logout: () => {
 				localStorage.removeItem("token"); 

@@ -48,13 +48,19 @@ def signup():
     
     user = User.query.filter_by(email=body["email"]).first()
    
+  
     if user is None:
         user = User(email=body["email"], password=body["password"], is_active=True)
         db.session.add(user)
         db.session.commit()
-        return jsonify({"msg": "Usuario creado exitosamente"}), 200
+
+        access_token = create_access_token(identity=body["email"])
+
+        return jsonify({"msg": "Usuario creado exitosamente", "access_token": access_token}), 200
     else:
-        return jsonify({"msg": "Ya existe ese usuario"}), 401
+        return jsonify({"msg": "Ya existe ese usuario"}), 409  
+    
+    
 
     
 
