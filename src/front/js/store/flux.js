@@ -13,54 +13,73 @@ const getState = ({ getStore, getActions, setStore }) => {
 					background: "white",
 					initial: "white"
 				}
-			]
+			],
+			auth: false 
 		},
 		actions: {
-			// Use getActions to call a function within a fuction
-			exampleFunction: () => {
-				getActions().changeColor(0, "green");
-			},
+			// Función de login
 			login: (email, password) => {
 				const requestOptions = {
 					method: "POST",
-					headers: { 'Content-Type': 'application/json' }, 
+					headers: { 'Content-Type': 'application/json' },
 					redirect: "follow",
 					body: JSON.stringify({
-						email: email, 
+						email: email,
 						password: password
 					})
 				};
-				
+
 				fetch(process.env.BACKEND_URL + "/api/login", requestOptions)
-					.then((response) => response.json())
-					.then((data) => console.log(data))
-					.catch((error) => console.error(error));
+					.then((response) => {
+						if (!response.ok) {
+							console.log("Error en el login:", response.status);
+							throw new Error("Login failed");
+						}
+						return response.json();
+					})
+					.then((data) => {
+						if (data.access_token) {
+							localStorage.setItem("token", data.access_token);
+							setStore({ auth: true });
+							console.log("Login exitoso:", data);
+						} else {
+							console.error("No se recibió un token:", data);
+						}
+					})
+					.catch((error) => {
+						console.error("Error:", error);
+						setStore({ auth: false }); 
+					});
 			},
+
+			
+			logout: () => {
+				localStorage.removeItem("token"); 
+				setStore({ auth: false }); 
+				console.log("Logout exitoso");
+			},
+
 			
 			getMessage: async () => {
-				try{
-					// fetching data from the backend
-					const resp = await fetch(process.env.BACKEND_URL + "/api/hello")
-					const data = await resp.json()
-					setStore({ message: data.message })
-					// don't forget to return something, that is how the async resolves
+				try {
+					const resp = await fetch(process.env.BACKEND_URL + "/api/hello");
+					if (!resp.ok) throw new Error("Error al obtener el mensaje");
+					
+					const data = await resp.json();
+					setStore({ message: data.message });
 					return data;
-				}catch(error){
-					console.log("Error loading message from backend", error)
+				} catch (error) {
+					console.log("Error al cargar el mensaje del backend", error);
 				}
 			},
-			changeColor: (index, color) => {
-				//get the store
-				const store = getStore();
 
-				//we have to loop the entire demo array to look for the respective index
-				//and change its color
+			
+			changeColor: (index, color) => {
+				const store = getStore();
 				const demo = store.demo.map((elm, i) => {
 					if (i === index) elm.background = color;
 					return elm;
 				});
-
-				//reset the global store
 				setStore({ demo: demo });
 			}
 		}
